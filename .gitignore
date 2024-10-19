@@ -1,0 +1,6 @@
+__pycache__
+.vscode
+.envrc
+.env
+cloud_force
+venv
