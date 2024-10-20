@@ -60,15 +60,6 @@ class UpdateUserModel(BaseModel):
             }
         },
     )
-
-
-# "id": "118318117770911139099",
-#   "email": "itskhadeerahmed@gmail.com",
-#   "verified_email": true,
-#   "name": "Khadeer Ahmed I",
-#   "given_name": "Khadeer",
-#   "family_name": "Ahmed I",
-#   "picture": "https://lh3.googleusercontent.com/a/ACg8ocLblsOAK05u7dTQz52gkcHpi-_w7ljHiVLl-HOVc88M6BlRtw=s96-c"
 class LoginResponseModel(BaseModel):
     """
     A set of optional updates to be made to a document in the database.
