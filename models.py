@@ -10,10 +10,6 @@ from typing_extensions import Annotated
 from bson import ObjectId
 
 
-
-
-
-
 # Represents an ObjectId field in the database.
 # It will be represented as a `str` on the model so that it can be serialized to JSON.
 PyObjectId = Annotated[str, BeforeValidator(str)]
@@ -60,6 +56,7 @@ class UpdateUserModel(BaseModel):
             }
         },
     )
+
 class LoginResponseModel(BaseModel):
     """
     A set of optional updates to be made to a document in the database.
@@ -78,6 +75,14 @@ class LoginResponseModel(BaseModel):
             }
         },
     )
+
+class File(BaseModel):
+    file_path: str
+    content: str
+
+class RepositoryData(BaseModel):
+    repository_name: str
+    files: List[File]
 
 class UserCollection(BaseModel):
     """

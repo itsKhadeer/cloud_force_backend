@@ -15,7 +15,7 @@ from bson import ObjectId
 import motor.motor_asyncio
 from pymongo import ReturnDocument
 
-from models import UserCollection, UserModel, UpdateUserModel, LoginResponseModel
+from models import File, UserCollection, UserModel, UpdateUserModel, LoginResponseModel, RepositoryData
 import requests
 
 load_dotenv()
@@ -204,3 +204,80 @@ async def login_user(code: str):
         await user_collection.insert_one(new_user.model_dump(by_alias=True, exclude=["id"]))
 
     return user_info
+
+@app.get("/scrape_github_repo", response_description="Scrape a GitHub repository", response_model=RepositoryData)
+async def scrape_github_repo(github_url: str):
+    result: RepositoryData = RepositoryData(repository_name="", files=[])
+    BINARY_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.pdf', '.exe', '.zip', '.tar', '.gz', '.mp4', '.avi']
+
+    def is_binary_file(file_path):
+        """Check if the file is likely to be binary based on the extension."""
+        for ext in BINARY_EXTENSIONS:
+            if file_path.lower().endswith(ext):
+                return True
+        return False
+
+    def get_github_repo_files(owner, repo, path="", token=None):
+        headers = {}
+        if token:
+            headers["Authorization"] = f"token {token}"
+
+        url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to retrieve data from GitHub API: {response.status_code}")
+
+        repo_data = response.json()
+
+        if isinstance(repo_data, list):
+            for content in repo_data:
+                file: File = File(file_path="", content="")
+
+                if content['type'] == 'file':
+                    file_path = content['path']
+                    file.file_path = file_path
+                    # Skip binary files based on extension
+                    if is_binary_file(file_path):
+                        print(f"Skipping binary file: {file_path}")
+                        continue
+                    
+                    # Fetch and print the file name
+                    print(f"Filename: {file_path}")
+                    
+                    # Check the file content type before downloading
+                    file_response = requests.get(content['download_url'], headers=headers)
+                    content_type = file_response.headers.get('Content-Type', '')
+
+                    # If content is plain text or code, print it; otherwise, skip it
+                    if 'text' in content_type or 'json' in content_type:
+                        file_content = file_response.text
+                        file.content = file_content
+                        print("Contents:")
+                        print(file_content)
+                    else:
+                        print(f"Skipping binary file based on content type: {file_path}")
+
+                    print("\n" + "=" * 40 + "\n")  # Separator for clarity
+
+                elif content['type'] == 'dir':
+                    # Recursively fetch the contents of subdirectories
+                    get_github_repo_files(owner, repo, content['path'], token=token)
+
+                if file.file_path != "" and file.content != "": 
+                    result.files.append(file)
+
+    def parse_github_repo(github_url, token=None):
+        # Extract the owner and repo name from the provided GitHub URL
+        parts = github_url.rstrip("/").split("/")
+        owner = parts[-2]
+        repo = parts[-1]
+        result.repository_name = repo
+
+        # Start the recursive parsing
+        get_github_repo_files(owner, repo, token=token)
+    
+    token = os.environ.get("GITHUB_TOKEN")
+    parse_github_repo(github_url, token)
+
+    return result 

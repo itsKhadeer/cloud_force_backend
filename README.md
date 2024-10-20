@@ -2,6 +2,9 @@
 
 ## Backend
 
+
+### Setup
+
 ```bash
 # Install the requirements:
 pip install -r requirements.txt
@@ -12,6 +15,12 @@ export MONGODB_URL="mongodb://localhost:27017/
 # Start the service:
 uvicorn app:app --reload
 ```
+This FastAPI backend leverages MongoDB as its database and includes several features such as Google OAuth 2.0 authentication and GitHub repository scraping.
+
+### Features
+
+- **Google OAuth 2.0 Authentication**: Securely authenticate users using their Google accounts.
+- **GitHub Repository Scraping**: Extract and analyze data from GitHub repositories.
 
 ## LLM
 
